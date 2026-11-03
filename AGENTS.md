@@ -1,65 +1,45 @@
-# 项目上下文
+# 校园报修系统
 
-### 版本技术栈
+## 项目概览
+校园后勤报修平台，三端一体：
+- **学生移动端** `/`：提交报修（类型/位置/描述/照片/紧急标记）+ 手机号查询我的报修
+- **管理后台** `/admin`：工单筛选、派发工程师、跟进、关闭、驳回、工程师管理
+- **数据大屏** `/screen`：工单总览、状态/类型分布、7 天趋势、工程师解决排行（30s 轮询）
 
-- **Framework**: Next.js 16 (App Router)
-- **Core**: React 19
-- **Language**: TypeScript 5
-- **UI 组件**: shadcn/ui (基于 Radix UI)
-- **Styling**: Tailwind CSS 4
+## 技术栈
+- Next.js 16 (App Router) + React 19 + TypeScript 5
+- shadcn/ui + Tailwind CSS 4
+- Supabase（Postgres）：表结构用 Drizzle 定义于 `src/storage/database/shared/schema.ts`，数据操作用 `@/storage/database/supabase-client` 的 `getSupabaseClient()`
+- 对象存储：`coze-coding-dev-sdk` 的 `S3Storage`，报修照片存 key 到 `repair_tickets.images`（jsonb），读取时用 `signImageKeys`（`src/lib/server-utils.ts`）生成签名 URL
+- 图表：recharts
 
-## 目录结构
+## 数据模型
+- `repair_tickets`：工单（ticket_no 编号、status: pending/dispatched/processing/closed/rejected、category、assignee_id 等）
+- `engineers`：维修工程师
+- `ticket_logs`：流转记录（created/dispatched/followed_up/closed/rejected）
+- RLS 已启用（场景 A），后端 service_role_key 绕过，无需 policy
+- 表结构变更流程：改 schema.ts → `coze-coding-ai db upgrade`
 
-```
-├── public/                 # 静态资源
-├── scripts/                # 构建与启动脚本
-│   ├── build.sh            # 构建脚本
-│   ├── dev.sh              # 开发环境启动脚本
-│   ├── prepare.sh          # 预处理脚本
-│   └── start.sh            # 生产环境启动脚本
-├── src/
-│   ├── app/                # 页面路由与布局
-│   ├── components/ui/      # Shadcn UI 组件库
-│   ├── hooks/              # 自定义 Hooks
-│   ├── lib/                # 工具库
-│   │   └── utils.ts        # 通用工具函数 (cn)
-│   └── server.ts           # 自定义服务端入口
-├── next.config.ts          # Next.js 配置
-├── package.json            # 项目依赖管理
-└── tsconfig.json           # TypeScript 配置
-```
+## API 一览（`src/app/api/`）
+| 路由 | 方法 | 说明 |
+|---|---|---|
+| `/api/tickets` | GET/POST | 工单列表（status/category/phone/keyword/分页）、创建工单 |
+| `/api/tickets/[id]` | GET | 详情（含 logs、engineer、image_urls） |
+| `/api/tickets/[id]/dispatch` | POST | 派发 `{engineer_id, note?}` |
+| `/api/tickets/[id]/follow-up` | POST | 跟进 `{content}`，dispatched→processing |
+| `/api/tickets/[id]/close` | POST | 关闭 `{note?}` |
+| `/api/tickets/[id]/reject` | POST | 驳回 `{reason}` |
+| `/api/engineers` | GET/POST | 工程师列表、新增 `{name, phone, specialty?}` |
+| `/api/stats` | GET | 大屏统计数据 |
+| `/api/upload` | POST | 图片上传（FormData file，≤5MB），返回 `{key}` |
 
-- 项目文件（如 app 目录、pages 目录、components 等）默认初始化到 `src/` 目录下。
+## 关键约定
+- 共享常量/类型集中在 `src/lib/constants.ts`（CATEGORIES、TICKET_STATUS、STATUS_COLORS 等），前后端共用
+- 所有 API 返回 `{success, data?, error?}`；Supabase 每次调用必须检查 error 并 throw
+- 状态流转约束：closed/rejected 为终态，不可再操作（后端强制校验）
+- 共享只读详情组件：`src/components/ticket-detail.tsx`（学生端弹窗 + 管理端抽屉复用）
+- 视觉规范见 `DESIGN.md`（状态色、大屏深色 #0B1530 等）
 
-## 包管理规范
-
-**仅允许使用 pnpm** 作为包管理器，**严禁使用 npm 或 yarn**。
-**常用命令**：
-- 安装依赖：`pnpm add <package>`
-- 安装开发依赖：`pnpm add -D <package>`
-- 安装所有依赖：`pnpm install`
-- 移除依赖：`pnpm remove <package>`
-
-## 开发规范
-
-### 编码规范
-
-- 默认按 TypeScript `strict` 心智写代码；优先复用当前作用域已声明的变量、函数、类型和导入，禁止引用未声明标识符或拼错变量名。
-- 禁止隐式 `any` 和 `as any`；函数参数、返回值、解构项、事件对象、`catch` 错误在使用前应有明确类型或先完成类型收窄，并清理未使用的变量和导入。
-
-### next.config 配置规范
-
-- 配置的路径不要写死绝对路径，必须使用 path.resolve(__dirname, ...)、import.meta.dirname 或 process.cwd() 动态拼接。
-
-### Hydration 问题防范
-
-1. 严禁在 JSX 渲染逻辑中直接使用 typeof window、Date.now()、Math.random() 等动态数据。**必须使用 'use client' 并配合 useEffect + useState 确保动态内容仅在客户端挂载后渲染**；同时严禁非法 HTML 嵌套（如 <p> 嵌套 <div>）。
-2. **禁止使用 head 标签**，优先使用 metadata，详见文档：https://nextjs.org/docs/app/api-reference/functions/generate-metadata
-   1. 三方 CSS、字体等资源可在 `globals.css` 中顶部通过 `@import` 引入或使用 next/font
-   2. preload, preconnect, dns-prefetch 通过 ReactDOM 的 preload、preconnect、dns-prefetch 方法引入
-   3. json-ld 可阅读 https://nextjs.org/docs/app/guides/json-ld
-
-## UI 设计与组件规范 (UI & Styling Standards)
-
-- 模板默认预装核心组件库 `shadcn/ui`，位于`src/components/ui/`目录下
-- Next.js 项目**必须默认**采用 shadcn/ui 组件、风格和规范，**除非用户指定用其他的组件和规范。**
+## 常用命令
+- `pnpm dev` / `pnpm ts-check` / `pnpm lint`
+- 端口读取 `process.env.DEPLOY_RUN_PORT`（主仓 5000）
