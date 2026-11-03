@@ -13,8 +13,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN">
-      <body className={`antialiased`}>
+    <html lang="zh-CN" suppressHydrationWarning>
+      <body className={`antialiased`} suppressHydrationWarning>
         {children}
         <Toaster position="top-center" richColors />
       </body>
