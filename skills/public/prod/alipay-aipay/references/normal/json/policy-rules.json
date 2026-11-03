@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "rules": [
+    {
+      "policyId": "P-MCP-CONTRACT-FROZEN",
+      "scope": "all",
+      "severity": "critical",
+      "text": "只用当前 Skill 已验证的 MCP 脚本契约；禁止推断、改名或尝试近似方法。",
+      "runtimeText": "仅用已验证脚本；禁推断或尝试近似方法。"
+    },
+    {
+      "policyId": "P-AUTH-BEFORE-ONBOARDING",
+      "scope": "onboarding",
+      "severity": "critical",
+      "text": "登录、scope 和 MCC 校验通过前，禁止 onboarding 查询或写入。",
+      "runtimeText": "登录/scope/MCC 未通过前禁查询和写入。"
+    },
+    {
+      "policyId": "P-PARTIAL-RESULT",
+      "scope": "onboarding",
+      "severity": "critical",
+      "text": "签约与应用分支独立记录，失败不回滚或覆盖其他成功结果。"
+    },
+    {
+      "policyId": "P-MATERIAL-CATEGORY",
+      "scope": "onboarding.materials",
+      "severity": "critical",
+      "text": "材料请求只能来自 material-collect stdout；签约闭集为首页、商品页、支付页三张截图，以及当前 MCC 回执明确要求时的特殊资质材料；应用闭集为应用公钥。签约截图和特殊资质材料必须来自用户真实经营页面或真实资质文件，严禁 Agent 或任何 AI 生成、改写、伪造、代补、修图、套用示例图或虚构材料。禁止索取真实姓名、身份证号、手机号、邮箱、店铺/网站名称、经营地址、网站域名、应用私钥或其他字段；同类一次收齐，已提供材料不得重复索取。",
+      "runtimeText": "材料只认 runner 闭集：签约三张真实截图、当前 MCC 回执要求的真实特殊资质材料、应用公钥；禁 AI 生成材料，禁自由补充身份、经营或私钥字段。"
+    },
+    {
+      "policyId": "P-KEY-PUBLIC-USER",
+      "scope": "onboarding.application",
+      "severity": "critical",
+      "text": "应用公钥只能由用户提供；缺少时禁止 createKeyConfirmPage，也不得补全、改写或添加 PEM 头尾。应用私钥只能由用户在 Coze 卡片中自行维护；Agent 禁止请求、接收、读取、校验、转换、保存、转发或复述。",
+      "runtimeText": "只接收应用公钥；应用私钥只由用户在 Coze 卡片维护，Agent 禁止处理。"
+    },
+    {
+      "policyId": "P-AUTH-URL",
+      "scope": "onboarding.authorization",
+      "severity": "critical",
+      "text": "授权链接只由 auth.sh 构造并校验固定域名、路径和参数；禁用 verification_url。"
+    },
+    {
+      "policyId": "P-KEY-URL",
+      "scope": "onboarding.application",
+      "severity": "critical",
+      "text": "公钥确认只展示 createKeyConfirmPage 返回并校验的裸 URL；禁止二维码链接和 alipays://。"
+    },
+    {
+      "policyId": "P-KEY-TOOL-GUIDE",
+      "scope": "onboarding.application",
+      "severity": "required",
+      "text": "缺少应用公钥时展示支付宝开放平台密钥工具官方地址；只要求用户提供应用公钥，不请求应用私钥。"
+    },
+    {
+      "policyId": "P-SANDBOX-CREDENTIAL-EXCEPTION",
+      "scope": "integration.sandbox",
+      "severity": "critical",
+      "text": "只允许快速沙箱实际返回且已校验的买家登录/支付密码由 sandbox summary 在沙箱摘要中展示一次；付款体验入口只引用该摘要，不得再次接收或复述账号密码。该例外不得扩展到生产环境账号、应用私钥或密码。",
+      "runtimeText": "仅登记且已校验的快速沙箱资料可按 flow 用于受保护项目；禁复述、另存或扩展到生产值。"
+    },
+    {
+      "policyId": "P-COZE-CREDENTIAL-FIELDS",
+      "scope": "all",
+      "severity": "critical",
+      "text": "Coze 支付宝支付密钥托管卡片只含 app_private_key 和 alipay_public_key；生产 appId 不在卡片内，必须从同一生产应用取得。当前 Skill 的代码开发和产品开通过程不唤起卡片、不读取卡片状态、不触发 alipay-payment-production-integration、不配置生产 appId 或正式网关。Onboarding 收口提醒用户前往支付宝 AI 付站点（https://aipay.alipay.com/?from=alipay-aipay-skill-coze）首页-一站式接入-AI网页应用收款-产品开通节点查看产品开通状态；确认产品已开通后，用户可以在 Coze 主动触发上线前准备流程。上线前准备必须先调用 integration_detail('integration-alipay') 唤起或检查全局密钥卡片，缺失时让用户自行维护同一 appId 对应的支付宝公钥和应用私钥；如果没有弹出卡片，可能是当前 Coze 编程平台已经配置了全局支付宝支付密钥，查看入口：扣子编程首页 → 左侧栏集成管理 → 外部集成 → 支付宝支付密钥托管；卡片调用完成后才由独立生产配置技能处理项目替换。卡片是全局一份，替换会影响仍使用上一套密钥的部署。配置前必须确认生产 appId、支付宝公钥和应用私钥属于同一套生产应用；上线前准备应优先沿用本轮 application-result/closeout 已确认的最新生产 appId；如后续无法唯一确认生产 appId，只能要求用户提供 appId；若后续明确改用其他生产 appId，以最新确认值为准。禁止声称卡片含有、保存、持久化、自动配置或自动注入 appId，禁止让用户把应用私钥提供给 Agent.",
+      "runtimeText": "Coze 卡片只托管应用私钥和支付宝公钥；appId 不在卡片内。代码/开通过程不弹卡或生产替换；上线交接先 integration_detail('integration-alipay')，再独立生产技能，禁索取私钥。"
+    },
+    {
+      "policyId": "P-SENSITIVE-STATE",
+      "scope": "all",
+      "severity": "critical",
+      "text": "用户提供的应用公钥仅用于当前 app key/verify-key/verify-key-and-audit 调用，禁止在回复、摘要、普通日志、跨会话状态或宽权限临时文件中复述或保存。当前应用动作从支付宝接口取得、已通过 RSA2 guard、绑定同一 appId 并安全导出为 0600 文件的支付宝公钥，只允许由 application.operation.result 或 process.partial_result 的登记 runner 校验文件后在应用结果中原样展示；不得进入命令参数、内部 marker、普通日志、遥测或自由话术。除登记的沙箱例外外，私钥、token、Payment-Proof、签名串、完整支付表单和未脱敏响应同样不得进入这些位置；临时 URL 仅可由登记动作校验后在该动作正文展示。",
+      "runtimeText": "用户应用公钥禁复述/保存；已核验并绑定同一 appId 的支付宝公钥只由登记应用结果原样展示，禁入参数、marker、日志、遥测或自由话术；其他敏感值仍禁输出。"
+    },
+    {
+      "policyId": "P-PROJECT-PROTECT",
+      "scope": "integration",
+      "severity": "critical",
+      "text": "不得清空、覆盖或删除用户既有项目；只在已确认目标路径和范围内做必要修改。",
+      "runtimeText": "禁清空/覆盖/删除既有项目；仅改已确认路径和范围。"
+    }
+  ],
+  "officialUrls": {
+    "aipayHome": "https://aipay.alipay.com/",
+    "aipaySkillSite": "https://aipay.alipay.com/?from=alipay-aipay-skill-coze",
+    "merchantPlatform": "https://b.alipay.com/page/portal/home",
+    "openPlatformHome": "https://open.alipay.com",
+    "keyToolManual": "https://opendocs.alipay.com/isv/02kipk"
+  },
+  "authorizationProducts": [
+    {
+      "productName": "AI 网页应用收款",
+      "salesCode": "I1080300001000041203",
+      "scope": "app:all,fast_instant_trade_pay:write"
+    }
+  ],
+  "temporaryUrlAllowlist": {
+    "authorization": {
+      "host": "aipay.alipay.com",
+      "path": "/cli-auth",
+      "requiredQueryParams": [
+        "deviceCode",
+        "productCode",
+        "mccCode"
+      ],
+      "optionalQueryParams": [
+        "platform"
+      ]
+    },
+    "publicKeyConfirmation": {
+      "host": "aipay.alipay.com",
+      "path": "/public-key-confirm",
+      "requiredQueryParams": [
+        "keyConfirmToken"
+      ],
+      "optionalQueryParams": []
+    }
+  }
+}

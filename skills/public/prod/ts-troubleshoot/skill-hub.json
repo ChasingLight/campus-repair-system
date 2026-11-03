@@ -1,0 +1,19 @@
+{
+  "showName": "TS Troubleshoot — TypeScript/ESLint 报错修复方案库",
+  "showDescription": "产物代码自检阶段 tsc/lint/build 报错且模型自身无法给出有效修复建议时使用。覆盖 TS 类型错误、ESLint 规则违反、语法解析错误和构建失败。",
+  "categoryTypes": [102],
+  "projectTypes": [6],
+  "skillIgnores": [
+    ".git",
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    ".next",
+    ".turbo"
+  ],
+  "skillId": {
+    "boe": "",
+    "online": ""
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "showName": "Coze Asset Runner",
+  "showDescription": "扣子平台资产调用 — 智能体对话、插件工具、工作流执行",
+  "categoryTypes": [102],
+  "projectTypes": [6],
+  "skillIgnores": [""],
+  "skillId": {}
+}

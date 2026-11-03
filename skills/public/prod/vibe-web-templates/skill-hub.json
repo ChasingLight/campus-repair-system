@@ -1,0 +1,11 @@
+{
+  "showName": "Vibe Web 热门模块框架",
+  "showDescription": "Vibe Web 开发场景下，中国行政区域级联选择、登录注册账户体系等热门模块的框架级实施指引（模块边界、数据契约、扩展点），避免现写现编。",
+  "categoryTypes": [100],
+  "projectTypes": [6],
+  "skillIgnores": [""],
+  "skillId": {
+    "boe": "",
+    "online": ""
+  }
+}

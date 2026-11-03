@@ -1,0 +1,7 @@
+{
+  "displayName" : "ar-sign-skill",
+  "author" : "骏七",
+  "name" : "ar-sign-skill",
+  "description" : "支付宝签约流程编排。当用户要签约、开通支付产品、查询合约/订单状态时使用。支持产品推荐、MCC类目选择、资质信息收集、签约申请提交、合约查询、订单查询。",
+  "version" : "v1.1"
+}

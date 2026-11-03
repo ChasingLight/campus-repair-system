@@ -1,0 +1,7 @@
+{
+  "displayName" : "application-publish",
+  "author" : "知穆",
+  "name" : "application-publish",
+  "description" : "支付能力接入主 skill 下的发布子 skill，主入口为“发布应用”，仅支持自然语言触发。",
+  "version" : "v1.11"
+}

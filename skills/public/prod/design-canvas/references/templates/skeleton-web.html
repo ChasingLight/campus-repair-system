@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- 字体（按需，系统字体时省略；只能用 Google 字体，CSS 地址前缀：https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google） -->
+  <!-- <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/google-all-fonts.css" rel="stylesheet"/> -->
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色 === */
+      --color-primary:              #XXXXXX;
+      --color-primary-container:    #XXXXXX;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面 === */
+      /* Web 端按需分层：background 和 surface 可以相同（靠 shadow 区分卡片），
+         不要求每层都不同，按实际场景启用。
+         ⚠️ surface-container 是 Tonal Fill（输入框/搜索框背景色）的关键层，
+         它必须与 background 有可感知的色差，否则输入框会"看不见"。
+         ⚠️ surface 色阶必须保持中性色调，不要把 primary 的色相混入
+         surface 系统。色彩氛围通过 primary、装饰元素传达，surface 只管层级 */
+      --color-background:                 #XXXXXX;
+      --color-surface-container-lowest:   #XXXXXX;
+      --color-surface:                    #XXXXXX;
+      --color-surface-container:          #XXXXXX;
+      --color-surface-container-high:     #XXXXXX;
+      --color-surface-container-highest:  #XXXXXX;
+      /* === 文字 === */
+      --color-on-surface:           #XXXXXX;
+      --color-on-surface-variant:   #XXXXXX;
+      /* === 功能色 === */
+      --color-success:  #22c55e;
+      --color-error:    #ef4444;
+      --color-warning:  #f59e0b;
+      /* === 边框 === */
+      --color-outline:          #XXXXXX;
+      --color-outline-variant:  #XXXXXX;
+      /* === 圆角 === */
+      --radius-sm:   Xrem;
+      --radius-md:   Xrem;
+      --radius-lg:   Xrem;
+      --radius-xl:   Xrem;
+      --radius-2xl:  Xrem;
+      --radius-full: 9999px;
+      /* === 阴影（background ≈ surface 时 opacity ≥ 0.08） === */
+      --shadow-card:   0 2px 8px rgba(0,0,0,X);
+      --shadow-float:  0 10px 25px rgba(0,0,0,X);
+      --shadow-dialog: 0 25px 50px rgba(0,0,0,X);
+      /* === 字体 === */
+      /* 正文字体只能使用 system-ui 或常规字体（Noto Sans SC / Noto Serif SC 等）。
+         创意展示体（ZCOOL 系列）和书法手写体（Ma Shan Zheng 等）仅限标题或装饰用途，
+         禁止用作 --font-sans 全局正文字体 */
+      --font-sans: "英文字体(可选)", "中文字体(可选)", system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <!-- @nav:start 导航组件，不需要的页面则不要复制此段（从 @nav:start 到 @nav:end） -->
+  <!-- 主 Agent 在此处生成实际的导航 HTML 代码（header / sidebar 等） -->
+  <!-- @nav:end 导航组件，不需要的页面则不要复制此段 -->
+
+  <!--
+    ⚠️ <main> 的 class 由主 Agent 根据步骤 4.5 的布局决策与实际设计需要填写，约束如下：
+      - 有侧边栏布局：必须用 flex-1（可加 min-w-0 / overflow-y-auto 等），禁止使用 max-w
+      - 无侧边栏布局：必须用 max-w-4xl ~ max-w-7xl 之一 + mx-auto
+      - 其他样式按实际设计需要自由组合
+    如无特殊需求，禁止使用  小于 max-w-4xl 的设置（过窄，桌面端会大量留白）。
+  -->
+  <main class="flex-1">
+    <!-- @main-content:start -->
+    <!-- @main-content:end -->
+  </main>
+
+  <script>lucide.createIcons();</script>
+</body>
+
+</html>

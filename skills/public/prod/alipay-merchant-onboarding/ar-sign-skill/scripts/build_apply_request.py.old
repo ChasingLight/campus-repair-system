@@ -1,0 +1,159 @@
+#!/usr/bin/env python3
+"""
+组装 apply MCP 的完整 request JSON。
+
+从 ar-sign-data.json 提取所有区块 values，组装为 apply 提交所需的 request。
+无用户交互，纯数据组装。
+
+用法:
+  # 输出到 stdout
+  python3 build_apply_request.py
+
+  # 输出到文件
+  python3 build_apply_request.py -o /tmp/apply_request.json
+
+  # 指定 ar-sign-data.json 路径
+  python3 build_apply_request.py --data /path/to/ar-sign-data.json
+"""
+
+import argparse
+import json
+import os
+import sys
+import uuid
+
+
+def error_exit(error_type, message, hint=None):
+    """输出结构化错误 JSON 到 stdout，供 LLM 解析处理。"""
+    result = {
+        "error": True,
+        "errorType": error_type,
+        "message": message,
+    }
+    if hint:
+        result["hint"] = hint
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    sys.exit(1)
+
+
+def load_ar_sign_data(filepath):
+    """读取 ar-sign-data.json，返回解析后的 dict。"""
+    if not os.path.exists(filepath):
+        error_exit(
+            "NO_SIGN_DATA",
+            f"签约数据文件不存在: {filepath}",
+            "没有进行中的签约流程，请引导用户重新选择产品开始签约。"
+        )
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except json.JSONDecodeError as e:
+        error_exit(
+            "INVALID_JSON",
+            f"ar-sign-data.json 不是合法 JSON: {e}",
+            "签约数据文件已损坏，请删除该文件并引导用户重新开始签约流程。"
+        )
+
+
+def extract_page_data(ar_sign_data):
+    """
+    从 ar-sign-data.json 提取所有区块的 values，合并为 pageData。
+
+    与 build_preview_request.py 相同逻辑：
+    遍历 artisanPage.data 下每个 blockId，提取 block.data.values，
+    合并到 pageData 顶层。跳过 basicArInfo 和 editPriceInfo。
+    """
+    artisan_page = ar_sign_data.get("artisanPage")
+    if not artisan_page:
+        error_exit(
+            "INVALID_STRUCTURE",
+            "ar-sign-data.json 中缺少 artisanPage 字段。",
+            "签约数据文件结构异常，请删除该文件并引导用户重新开始签约流程。"
+        )
+
+    blocks = artisan_page.get("data")
+    if not blocks or not isinstance(blocks, dict):
+        error_exit(
+            "INVALID_STRUCTURE",
+            "artisanPage.data 缺失或格式错误。",
+            "签约数据文件结构异常，请删除该文件并引导用户重新开始签约流程。"
+        )
+
+    SKIP_BLOCKS = {"basicArInfo", "editPriceInfo"}
+
+    page_data = {}
+    for block_id, block in blocks.items():
+        if block_id in SKIP_BLOCKS:
+            continue
+        values = block.get("data", {}).get("values")
+        if values and isinstance(values, dict):
+            page_data.update(values)
+
+    return page_data
+
+
+def build_request(page_data, sales_codes, channel_code="B_SK_SH_RPC", order_type="NEW_SIGN"):
+    """组装完整的 apply MCP request。"""
+    return {
+        "request": {
+            "bizRequestNo": str(uuid.uuid4()),
+            "salesProductCodes": sales_codes,
+            "pageData": page_data,
+            "channelCode": channel_code,
+            "orderType": order_type,
+        },
+        "ctx": {}
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="从 ar-sign-data.json 组装 apply MCP 的完整 request"
+    )
+    parser.add_argument(
+        "--data", "-d",
+        default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".alipay", "ar-sign-data.json"),
+        help="ar-sign-data.json 路径（默认: ../.alipay/ar-sign-data.json）"
+    )
+    parser.add_argument(
+        "--order-type",
+        default="NEW_SIGN",
+        help="orderType（默认: NEW_SIGN）"
+    )
+    parser.add_argument(
+        "--output", "-o",
+        help="输出到文件（默认输出到 stdout）"
+    )
+
+    args = parser.parse_args()
+
+    # 1. 读取 ar-sign-data.json
+    ar_sign_data = load_ar_sign_data(args.data)
+
+    # 2. 提取 pageData
+    page_data = extract_page_data(ar_sign_data)
+
+    # 3. 获取 salesProductCodes
+    sales_codes = ar_sign_data.get("meta", {}).get("salesCodes")
+    if not sales_codes:
+        error_exit(
+            "NO_SALES_CODES",
+            "ar-sign-data.json 中无 meta.salesCodes。",
+            "签约数据文件缺少产品编码，请删除该文件并引导用户重新开始签约流程。"
+        )
+
+    # 4. 组装 request
+    output = build_request(page_data, sales_codes, order_type=args.order_type)
+
+    result = json.dumps(output, ensure_ascii=False, indent=2)
+
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as f:
+            f.write(result)
+        print(f"已输出到 {args.output}", file=sys.stderr)
+    else:
+        print(result)
+
+
+if __name__ == "__main__":
+    main()

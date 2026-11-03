@@ -1,0 +1,16 @@
+# AI 网页应用收款问题排查
+
+仅在用户报告集成报错、错误码或异常时读取。先确认报错接口或环节、沙箱/生产环境、可脱敏错误码与实际现象；缺少时暂停并请用户补充，禁止猜测。本模块只定义排查顺序，接口参数与状态仍以本地契约、目标项目实际 SDK 与登记官方资料为准。
+
+1. **签名与验签**：`invalid-signature`、`ERR_OSSL_UNSUPPORTED` 或验签失败时，先比对实际发送、参与签名和验签的参数及编码，再检查 Node.js 项目读取的密钥字段、`RSA2`、公钥模式与当前环境网关。当前 Skill 只核对沙箱 PKCS#1 的 `appIds[0].appPrivateKey` 原始值；生产配置核验属于独立生产技能，不读取或输出密钥值。禁止添加 PEM 头尾、切换字段、转换密钥或改用证书模式。
+2. **下单与支付状态**：核对 `alipay.trade.page.pay`、`pageExec()`、`FAST_INSTANT_TRADE_PAY`、实际网关和请求参数。HTML form 不是跳转 URL；默认从支付按钮的异步处理函数用 inert `template` 提取并显式提交 form，不能依赖 `innerHTML` 中的脚本，也不能用浏览器原生对话框、全屏白色遮罩或 `document.write` 替换页面。禁止把 `form.action`、hidden input、`URLSearchParams` 或 `FormData` 拼成 query string 后用 GET 跳转。跨域本身不证明 template 方案失效；`form.submit()` 未出现可见跳转时，先检查处理函数是否执行、form 是否存在、POST 与固定网关校验是否通过、节点是否已挂载、原生提交调用是否执行、网络面板是否发出 POST，以及 Coze 预览 iframe/浏览器是否有明确阻断证据。没有控制台或网络证据时，不得直接归因为“用户手势丢失”，也不得把 POST form 改成 GET URL。同步回跳不是支付成功依据；未知结果先核对 `alipay.trade.query` 实际返回，主动查询必须有限次重试，不要求用户立即重复付款。
+3. **配置路径与回跳 URL**：Next.js 找不到由 `alipay-sdk-config.ts` 读取的 `.alipay-sandbox.json` 时，先确认是否错误使用编译后 `.next/server/...` 的 `__dirname`，再核对实际启动目录与 package 根；不得笼统声称 `process.cwd()` 永远正确。回跳地址出现双协议时，检查是否给已含 `https://` 的 `COZE_PROJECT_DOMAIN_DEFAULT` 再次拼接 scheme；改为按 Coze 开发指南解析、校验 origin 后用 `new URL()` 构造。
+4. **查询 `40004`**：`code=40004` 或 `msg=Business Failed` 不能单独归因。先把查询响应归一化为同一对象，再读 `code`、`msg`、`trade_status`/`tradeStatus`；然后收集实际 `sub_code`、`sub_msg`、响应中实际存在的 trace 标识、环境、非敏感 appId、精确完整网关和精确 `out_trade_no`，再确认查询与下单属于同一应用和环境。证据不足时保持状态未知；禁止推断沙箱延迟或数据清理，也禁止承诺生产必然可查询。
+5. **结果页崩溃**：核对商户 `return_url` 构造、结果页参数读取和查询 API 响应的内部字段名是否一致。新项目固定使用 `outTradeNo` 与 `tradeStatus`，但不得将其表述为支付宝官方字段；状态配置必须有 `UNKNOWN` 兜底，禁止直接读取 `statusConfig[undefined].icon`。
+6. **异步通知**：核对 `notify_url` 是当前项目真实域名下的公网 HTTPS 服务端 POST 表单入口且无重定向，验签前保留完整表单，验签后校验 `app_id`/`out_trade_no`/`total_amount`/`seller_id`，以 `notify_id`、订单和事件做持久化幂等，成功后只返回纯文本 `success`。用户付款后可能不会回到前端页面；未收到通知或状态未知时用有限次交易查询补偿。
+7. **退款与关单**：退款前核对原订单实付金额、累计已退和十进制定点金额。新退款用新 `out_request_no`；同一笔未知结果重试复用原编号和参数，并以 `alipay.trade.fastpay.refund.query` 核实。关单只用于未付款交易，不在默认排障中发起生产写操作。
+8. **Coze 生产配置**：当前 Skill 不核对或替换 `integration-alipay` 生产配置。确认产品已开通后，用户可以在 Coze 主动触发上线前准备流程；当前 Skill 先调用 `integration_detail('integration-alipay')` 打开或检查全局“支付宝支付密钥托管”卡片，缺失时让用户维护同一生产 appId 对应的支付宝公钥和 PKCS#1 应用私钥；如果没有弹出卡片，可能是当前 Coze 编程平台已经配置了全局支付宝支付密钥，查看入口：扣子编程首页 → 左侧栏集成管理 → 外部集成 → 支付宝支付密钥托管。配置前必须确认生产 appId、支付宝公钥和应用私钥属于同一套生产应用。当前 Skill 自身不调用 `getIntegrationCredential()`；若后续独立生产链路需要读取托管凭证，那是其自己的 workload-identity 责任边界，不是当前 Skill 的动作。卡片处理完成后，再由独立 `alipay-payment-production-integration` 技能核验生产网关、生产 appId、字段映射和失败关闭。Agent 不读取或转换生产私钥。
+9. **官方依据**：有明确错误码时先查[公共错误码说明](https://ideservice.alipay.com/cms/site/02km9f)，无匹配时再查当前接口契约的 `sourceUrl`；无明确错误码时查[AI 网页应用收款常见问题](https://ideservice.alipay.com/cms/site/0j3kh1)。
+10. **Coze 平台踩坑**：前端只认沙箱域名会把正式网关误判非法，提交校验必须接受当前生效配置对应的固定完整网关，不得写死某一环境白名单。生产凭证不要猜环境变量，独立生产链路 runtime 才能通过 `@coze/workload-identity` 的 `getIntegrationCredential('integration-alipay')` 读取托管凭证；当前 Skill 里的 `integration_detail('integration-alipay')` 只是唤起卡片，不是读凭证。CommonJS 项目不要用模块顶层 `await`；应改成惰性初始化或 Promise 记忆化，并保持沙箱分支和生产分支互不干扰。
+
+没有确定依据时明确说明无法确认、已核对的范围和还缺的证据，并引导用户查阅[支付宝开放平台](https://open.alipay.com?form=payskill)或咨询[支付宝技术支持](https://opensupport.alipay.com/support/intelligent-services?form=payskill)。
