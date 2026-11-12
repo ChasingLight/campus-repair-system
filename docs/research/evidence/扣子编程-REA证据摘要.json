@@ -1,0 +1,176 @@
+{
+  "schema": "cap.research.evidence-summary.v1",
+  "date": "2026-11-05",
+  "tool": {
+    "name": "rea-agents",
+    "version": "6.8.0",
+    "node": "22.23.4",
+    "interface": "local CLI; no MCP registration"
+  },
+  "raw_capture": {
+    "filename": "coze-full-resources.har",
+    "bytes": 47141668,
+    "sha256": "015e2c67420491f62ffb301d8527d22c99b35f77eef31725ea0cd99d5317b048",
+    "entries": 371,
+    "first_started_utc": "2026-11-05T03:34:23.031Z",
+    "last_started_utc": "2026-11-05T03:37:27.194Z",
+    "websocket_connections": 6,
+    "websocket_frames": 281
+  },
+  "derivation": {
+    "selected_records": 129,
+    "selection": "Preserve code.coze.cn, *.dev.coze.site and every WebSocket entry; original order; only normalize optional serverIPAddress; request/response bodies and WebSocket extensions unchanged.",
+    "normalized_fields": 128,
+    "normalization_counts": {
+      "remove Chromium IPv6 brackets for HAR schema": 122,
+      "omit empty optional address": 6
+    },
+    "selected_capture_sha256": "5b73fe3792463aaff9888e18b85e77b24e0ccd3768c9828396d60ce04c096e9b",
+    "raw_files_directory": "/private/tmp/cap-rea-evidence",
+    "raw_files_in_repository": false
+  },
+  "operations": [
+    {
+      "operation": "inspect_web_network_capture",
+      "exit_code": 0,
+      "evidence_id": "ev_2ce337824ac0143dcb574c24b8b65041cf2c3f576ebd62bf02b59e923589b749",
+      "authority": "historical-reference",
+      "artifact_file": "rea-platform-final-evidence.json",
+      "artifact_sha256": "bb81f3b5b1920ae8763abd25a3a2f36411e47234e2144eaa4a407d9a975223fc",
+      "statistics": {
+        "records": 129
+      },
+      "limitations": [
+        "This is retained producer evidence, without live browser transaction IDs, scenario provenance, execution attribution or deployment authenticity. Recorded URLs are never fetched.",
+        "Every record is decoded before selection; no partial success is returned on malformed input or a resource limit.",
+        "Known authentication headers/cookies and explicitly marked literal values are excluded. Unknown extension names do not establish sensitivity.",
+        "Complete evidence is bounded by a 33554432-byte input budget, a 100663296-byte reply budget, and a 64-level nesting cap. Those have no runtime override. capture_timeout_ms is 30000 ms (omitted means 30000). HAR/SAZ/qlog use a 192 MiB Node old-generation heap (source default). The effective REA_CAPTURE_DECODER_OLD_GENERATION_MIB value is 192 MiB (source default; default 192 MiB, floor 8 MiB, maximum 16384 MiB). Set REA_CAPTURE_DECODER_OLD_GENERATION_MIB in the environment that starts REA to a decimal integer from 8 to 16384, then restart REA. In a running MCP server, use update_analysis_settings with setting capture.decoder_old_generation_mib and action set instead; the new value applies to new work without a REA restart. On Node.js the decoder passes --max-old-space-size=192 and removes inherited NODE_OPTIONS, so additional host memory and NODE_OPTIONS do not raise this heap. The 8 MiB semi-space stays fixed. On Bun the V8 flags are ignored. Windows limits the decoder's committed memory to this value plus a 512 MiB reserve. Other Bun hosts enforce no decoder heap limit. Mitmproxy decoding uses a 768 MiB Linux address-space limit."
+      ]
+    },
+    {
+      "operation": "analyze_javascript_application",
+      "exit_code": 0,
+      "evidence_id": "ev_a907f7959f55169f0db29d484b84053a4ac1c7b7fde210f90ec07d532030d9ac",
+      "authority": "shipped-artifact",
+      "artifact_file": "rea-frontend-evidence-v2.json",
+      "artifact_sha256": "bb1addb03b9c669a0b3e412928d45c3e5867afeeee094c02578c0ca93b670f4b",
+      "statistics": {
+        "findings": 86,
+        "invalid_utf8_files": 0,
+        "modules": 6,
+        "nested_asar_containers": 0,
+        "parse_failures": 0,
+        "parsed_javascript_files": 2,
+        "relevant_files": 10,
+        "skipped_javascript_files": 0,
+        "text_bytes_read": 51832,
+        "visited_ast_nodes": 11745
+      },
+      "source_selection": {
+        "requested_paths": [
+          "043-6798.cd67186c.js",
+          "083-4434.b633e7dc.js"
+        ],
+        "unselected_files": 8
+      },
+      "limitations": [
+        "Caller-selected source analysis leaves 8 inventoried files outside analysis scope. Inventory identity covers the complete artifact; relationships through unselected sources remain unknown.",
+        "CommonJS and ESM binding relationships were recovered from inert syntax and resolved only within the inventoried artifact container.",
+        "Graph coverage is incomplete; unavailable facts remain explicit and must not be read as absence.",
+        "JavaScript and HTML were parsed as inert text; bundle bootstrap code was never executed.",
+        "Static imports, entrypoints, workers, endpoints, and storage relationships do not prove runtime execution.",
+        "Static paths and relationships may remain unresolved when expressions are dynamic or obfuscated.",
+        "Webpack/Rspack factories were recovered from AST literals; REA did not invoke push handlers or bundle bootstrap code."
+      ]
+    }
+  ],
+  "observed_http_contracts": [
+    {
+      "original_ordinal": 107,
+      "method": "POST",
+      "path_template": "/api/ideserver_api/project/get_vibe_project",
+      "http_status": 200
+    },
+    {
+      "original_ordinal": 108,
+      "method": "POST",
+      "path_template": "/api/ideserver_api/project/get_vibe_global_settings",
+      "http_status": 200
+    },
+    {
+      "original_ordinal": 121,
+      "method": "GET",
+      "path_template": "/v1/api/project/{project_id}/conversation/list",
+      "http_status": 200
+    },
+    {
+      "original_ordinal": 130,
+      "method": "GET",
+      "path_template": "/v1/api/project/{project_id}/queue",
+      "http_status": 200
+    },
+    {
+      "original_ordinal": 131,
+      "method": "GET",
+      "path_template": "/v1/api/project/tools",
+      "http_status": 200
+    },
+    {
+      "original_ordinal": 132,
+      "method": "POST",
+      "path_template": "/v1/skill/by_ids",
+      "http_status": 200
+    },
+    {
+      "original_ordinal": 133,
+      "method": "POST",
+      "path_template": "/v1/api/project/model_list",
+      "http_status": 200
+    },
+    {
+      "original_ordinal": 136,
+      "method": "GET",
+      "path_template": "/v1/api/project/{project_id}/chat/history",
+      "http_status": 200
+    },
+    {
+      "original_ordinal": 345,
+      "method": "GET",
+      "path_template": "/api/coding/deployment/deploy_config/get",
+      "http_status": 200
+    },
+    {
+      "original_ordinal": 349,
+      "method": "GET",
+      "path_template": "/api/coding/deployment/deploy_unit/get",
+      "http_status": 200
+    },
+    {
+      "original_ordinal": 352,
+      "method": "GET",
+      "path_template": "/api/coding/deployment/deploy_history/list",
+      "http_status": 200
+    },
+    {
+      "original_ordinal": 353,
+      "method": "GET",
+      "path_template": "/api/coding/deployment/deploy_history/get_online",
+      "http_status": 200
+    }
+  ],
+  "observed_skill_metadata": {
+    "count": 22,
+    "preload_true": [
+      "Web 性能最佳实践",
+      "前端设计进阶"
+    ],
+    "preload_false_count": 20,
+    "source_ordinal": 132
+  },
+  "limitations": [
+    "Current configuration does not establish original prompt injection or execution.",
+    "Captured history is paginated and incomplete; no new coding round was triggered.",
+    "Do not equate current model catalog or Auto selection with actual model routing.",
+    "Raw captures retain sensitive query and response fields; only this curated summary belongs in the repository."
+  ]
+}

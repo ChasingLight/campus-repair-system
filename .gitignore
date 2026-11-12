@@ -111,6 +111,8 @@ coverage/
 .env.development.local
 .env.test.local
 .env.production.local
+/skills/user/resources/school-resources-dev.json
+/skills/user/resources/school-resources-prod.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
